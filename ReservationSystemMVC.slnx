@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ReservationSystemMVC.Core/ReservationSystemMVC.Core.csproj" Id="9528b9c8-f484-4d7a-ba9c-aa47f5a34136" />
+  <Project Path="ReservationSystemMVC.Infrastructure/ReservationSystemMVC.Infrastructure.csproj" Id="e9dae475-4dfe-4290-b24d-19d9727bcbde" />
+  <Project Path="ReservationSystemMVC/ReservationSystemMVC.csproj" />
+</Solution>

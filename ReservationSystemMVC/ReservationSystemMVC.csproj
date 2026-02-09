@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReservationSystemMVC.Core\ReservationSystemMVC.Core.csproj" />
+    <ProjectReference Include="..\ReservationSystemMVC.Infrastructure\ReservationSystemMVC.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
