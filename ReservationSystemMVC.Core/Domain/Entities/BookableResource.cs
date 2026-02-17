@@ -1,8 +1,9 @@
-﻿using System;
+﻿using ReservationSystemMVC.Core.Domain.Abstractions;
+using System;
 
 namespace ReservationSystemMVC.Core.Domain.Entities
 {
-    public abstract class BookableResource
+    public abstract class BookableResource : IBookableResource
     {
         public Guid Id { get; } = Guid.NewGuid();
         public string Name { get; protected set; }

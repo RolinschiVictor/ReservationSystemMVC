@@ -7,11 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Abstractions\Services\" />
+    <Folder Include="Application\Factories\FactoryMethod\" />
+    <Folder Include="Application\Factories\AbstractFactory\" />
     <Folder Include="Domain\Enums\" />
     <Folder Include="DTOs\" />
     <Folder Include="Services\Payments\" />
-    <Folder Include="Services\Pricing\" />
   </ItemGroup>
 
 </Project>
