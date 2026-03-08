@@ -1,9 +1,25 @@
-﻿namespace ReservationSystemMVC.Core.Domain.Entities
+﻿using ReservationSystemMVC.Core.Domain.Enums;
+using ReservationSystemMVC.Core.Domain.ValueObjects;
+
+namespace ReservationSystemMVC.Core.Domain.Entities
 {
     public class Apartment : BookableResource
     {
         public int Rooms { get; private set; }
         public decimal PricePerDay { get; private set; }
+
+        // Professional properties
+        public string Description { get; set; } = "";
+        public Location? Location { get; set; }
+        public double Rating { get; set; }
+        public List<string> Images { get; set; } = [];
+        public ApartmentFeature Features { get; set; } = ApartmentFeature.None;
+        public int Beds { get; set; }
+        public int Bathrooms { get; set; }
+        public string Area { get; set; } = "";
+        public int MaxGuests { get; set; }
+        public ApartmentRules? Rules { get; set; }
+        public List<Review> Reviews { get; set; } = [];
 
         public Apartment(string name, int rooms, decimal pricePerDay) : base(name)
         {
@@ -14,6 +30,6 @@
             PricePerDay = pricePerDay;
         }
 
-        public override string Describe() => $"Apartment: {Name}, rooms={Rooms}, {PricePerDay}/day";
+        public override string Describe() => $"Apartment: {Name}, rooms={Rooms}, {PricePerDay}€/day";
     }
 }

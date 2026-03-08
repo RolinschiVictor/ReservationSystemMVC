@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="Application\Factories\FactoryMethod\" />
     <Folder Include="Application\Factories\AbstractFactory\" />
-    <Folder Include="Domain\Enums\" />
     <Folder Include="DTOs\" />
     <Folder Include="Services\Payments\" />
   </ItemGroup>

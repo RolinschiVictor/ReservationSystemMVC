@@ -5,78 +5,121 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ReservationSystemMVC</title>
     <script type="importmap"></script>
+    <!-- Tailwind CSS (CDN – development) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Keep Bootstrap for existing components that still use it -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ReservationSystemMVC.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Rezervări</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse" id="mainNavbar">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="search">Search</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="hotels">Hotels</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="apartments">Apartments</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="events">Events</a>
-                        </li>
-                        @if (User?.Identity?.IsAuthenticated ?? false)
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="reservations">My Reservations</a>
-                            </li>
-                        }
-                        @if (User?.IsInRole("Admin") ?? false)
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="admin">Admin</a>
-                            </li>
-                        }
-                    </ul>
-                    <ul class="navbar-nav ms-auto">
-                        @if (User?.Identity?.IsAuthenticated ?? false)
-                        {
-                            <li class="nav-item">
-                                <span class="navbar-text text-dark">Salut, @User.Identity!.Name</span>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="auth">Login/Register</a>
-                            </li>
-                        }
-                    </ul>
-                </div>
+<body class="min-h-screen flex flex-col bg-gray-50 text-gray-800">
+
+    <!-- ===== NAVBAR (Tailwind) ===== -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+            <!-- Brand -->
+            <a asp-controller="Home" asp-action="Index"
+               class="text-xl font-bold text-brand-600 hover:text-brand-700 transition">
+                🏨 Rezervări
+            </a>
+
+            <!-- Mobile toggle -->
+            <button id="navToggle" type="button"
+                    class="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:bg-gray-100 focus:outline-none">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+
+            <!-- Links -->
+            <div id="navMenu" class="hidden lg:flex lg:items-center lg:gap-6">
+                <a asp-controller="Home" asp-action="Index"
+                   class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">Home</a>
+                <a asp-controller="Search" asp-action="Index"
+                   class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">Search</a>
+                <a asp-controller="Home" asp-action="Index" asp-fragment="hotels"
+                   class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">Hotels</a>
+                <a asp-controller="Home" asp-action="Index" asp-fragment="apartments"
+                   class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">Apartments</a>
+                <a asp-controller="Home" asp-action="Index" asp-fragment="events"
+                   class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">Events</a>
+
+                @if (User?.Identity?.IsAuthenticated ?? false)
+                {
+                    <a asp-controller="Home" asp-action="Index" asp-fragment="reservations"
+                       class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">My Reservations</a>
+                }
+                @if (User?.IsInRole("Admin") ?? false)
+                {
+                    <a asp-controller="Home" asp-action="Index" asp-fragment="admin"
+                       class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">Admin</a>
+                }
+
+                <!-- Auth area -->
+                @if (User?.Identity?.IsAuthenticated ?? false)
+                {
+                    <span class="ml-4 text-sm text-gray-500">Salut, <strong>@User.Identity!.Name</strong></span>
+                }
+                else
+                {
+                    <a asp-controller="Home" asp-action="Index" asp-fragment="auth"
+                       class="ml-4 inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-brand-600 rounded-lg hover:bg-brand-700 transition">
+                        Login / Register
+                    </a>
+                }
             </div>
         </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Rezervări - <a asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="contact">Contact</a>
+        <!-- Mobile menu (hidden by default) -->
+        <div id="mobileMenu" class="hidden lg:hidden border-t border-gray-100 px-4 pb-4 space-y-2">
+            <a asp-controller="Home" asp-action="Index" class="block py-2 text-sm text-gray-600 hover:text-brand-600">Home</a>
+            <a asp-controller="Search" asp-action="Index" class="block py-2 text-sm text-gray-600 hover:text-brand-600">Search</a>
+            <a asp-controller="Home" asp-action="Index" asp-fragment="hotels" class="block py-2 text-sm text-gray-600 hover:text-brand-600">Hotels</a>
+            <a asp-controller="Home" asp-action="Index" asp-fragment="apartments" class="block py-2 text-sm text-gray-600 hover:text-brand-600">Apartments</a>
+            <a asp-controller="Home" asp-action="Index" asp-fragment="events" class="block py-2 text-sm text-gray-600 hover:text-brand-600">Events</a>
+            @if (User?.Identity?.IsAuthenticated ?? false)
+            {
+                <a asp-controller="Home" asp-action="Index" asp-fragment="reservations" class="block py-2 text-sm text-gray-600 hover:text-brand-600">My Reservations</a>
+            }
+            @if (!User?.Identity?.IsAuthenticated ?? true)
+            {
+                <a asp-controller="Home" asp-action="Index" asp-fragment="auth" class="block py-2 text-sm font-semibold text-brand-600">Login / Register</a>
+            }
+        </div>
+    </header>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        @RenderBody()
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between text-sm text-gray-500">
+            <span>&copy; 2026 Rezervări</span>
+            <a asp-controller="Home" asp-action="Index" asp-fragment="contact"
+               class="hover:text-brand-600 transition mt-2 sm:mt-0">Contact</a>
         </div>
     </footer>
+
+    <!-- Mobile nav toggle script -->
+    <script>
+        document.getElementById('navToggle').addEventListener('click', function () {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        });
+    </script>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

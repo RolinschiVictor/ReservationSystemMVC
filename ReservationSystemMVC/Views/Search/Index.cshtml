@@ -1,0 +1,314 @@
+﻿@model ReservationSystemMVC.Models.ResourceSearchViewModel
+@using ReservationSystemMVC.Core.Domain.Entities
+@using ReservationSystemMVC.Core.Domain.Enums
+
+@{
+    ViewData["Title"] = "Search";
+}
+
+<section class="space-y-8">
+    <h2 class="text-2xl font-bold text-gray-800">🔍 Căutare resurse</h2>
+
+    <!-- Search Form -->
+    <form method="get" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tip</label>
+            <select asp-for="Category" asp-items="Html.GetEnumSelectList<ReservationSystemMVC.Models.ResourceCategory>()"
+                    class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500">
+                <option value="">-- alege --</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Data începerii</label>
+            <input type="date" asp-for="StartDate"
+                   class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500" />
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Durată (zile)</label>
+            <input type="number" asp-for="Days" min="1" value="@(Model.Days <= 0 ? 1 : Model.Days)"
+                   class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-brand-500 focus:border-brand-500" />
+        </div>
+        <div>
+            <button type="submit"
+                    class="w-full px-6 py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition shadow">
+                🔍 Caută
+            </button>
+        </div>
+    </form>
+
+    <!-- Message -->
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg text-sm">
+            @Model.Message
+        </div>
+    }
+
+    <!-- Results -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="space-y-6">
+            @foreach (var r in Model.Results)
+            {
+                var totalPrice = Model.TotalPrices.GetValueOrDefault(r.Id, 0m);
+
+                @if (r is HotelRoom hotel)
+                {
+                    <!-- HOTEL CARD -->
+                    <div class="bg-white rounded-xl shadow-sm hover:shadow-lg transition overflow-hidden border border-gray-200">
+                        <div class="flex flex-col md:flex-row">
+                            <div class="md:w-1/3 h-56 md:h-auto">
+                                @if (hotel.Images.Count > 0)
+                                {
+                                    <img src="@hotel.Images[0]" alt="@hotel.Name" class="w-full h-full object-cover" />
+                                }
+                                else
+                                {
+                                    <div class="h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                                        <span class="text-5xl">🏨</span>
+                                    </div>
+                                }
+                            </div>
+                            <div class="md:w-2/3 p-5 space-y-3">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-gray-800">@hotel.Name</h3>
+                                        @if (hotel.Location is not null)
+                                        {
+                                            <p class="text-sm text-gray-500">📍 @hotel.Location.City, @hotel.Location.Country</p>
+                                        }
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm font-bold text-yellow-600">⭐ @hotel.Rating.ToString("0.0")</span>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-600">@hotel.Description</p>
+
+                                <!-- Amenities -->
+                                <div class="flex flex-wrap gap-1.5">
+                                    @foreach (var flag in Enum.GetValues<HotelAmenity>().Where(f => f != HotelAmenity.None && hotel.Amenities.HasFlag(f)))
+                                    {
+                                        <span class="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded-full">@FormatEnum(flag.ToString())</span>
+                                    }
+                                </div>
+
+                                <!-- Room Types -->
+                                @if (hotel.RoomTypes.Count > 0)
+                                {
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach (var rt in hotel.RoomTypes)
+                                        {
+                                            <span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">@rt.RoomName — @rt.RoomSize</span>
+                                        }
+                                    </div>
+                                }
+
+                                <!-- Languages -->
+                                @if (hotel.LanguagesSpoken.Count > 0)
+                                {
+                                    <p class="text-xs text-gray-400">🗣 @string.Join(", ", hotel.LanguagesSpoken)</p>
+                                }
+
+                                <!-- Price -->
+                                <div class="flex items-center gap-3 pt-2 border-t border-gray-100">
+                                    <span class="px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">@hotel.PricePerDay €/noapte</span>
+                                    @if (totalPrice > 0)
+                                    {
+                                        <span class="px-3 py-1 text-xs font-bold bg-brand-600 text-white rounded-full">Total: @totalPrice € / @Model.Days nopți</span>
+                                    }
+                                </div>
+
+                                <!-- Reviews -->
+                                @if (hotel.Reviews.Count > 0)
+                                {
+                                    var lastReview = hotel.Reviews.Last();
+                                    <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                                        <p class="text-gray-600 italic">"@lastReview.Comment"</p>
+                                        <p class="text-xs text-gray-400 mt-1">— @lastReview.UserName, @lastReview.Date.ToString("dd.MM.yyyy")</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (r is Apartment apt)
+                {
+                    <!-- APARTMENT CARD -->
+                    <div class="bg-white rounded-xl shadow-sm hover:shadow-lg transition overflow-hidden border border-gray-200">
+                        <div class="flex flex-col md:flex-row">
+                            <div class="md:w-1/3 h-56 md:h-auto">
+                                @if (apt.Images.Count > 0)
+                                {
+                                    <img src="@apt.Images[0]" alt="@apt.Name" class="w-full h-full object-cover" />
+                                }
+                                else
+                                {
+                                    <div class="h-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                                        <span class="text-5xl">🏠</span>
+                                    </div>
+                                }
+                            </div>
+                            <div class="md:w-2/3 p-5 space-y-3">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-gray-800">@apt.Name</h3>
+                                        @if (apt.Location is not null)
+                                        {
+                                            <p class="text-sm text-gray-500">📍 @apt.Location.City, @apt.Location.Country</p>
+                                        }
+                                    </div>
+                                    <span class="text-sm font-bold text-yellow-600">⭐ @apt.Rating.ToString("0.0")</span>
+                                </div>
+                                <p class="text-sm text-gray-600">@apt.Description</p>
+
+                                <!-- Details -->
+                                <div class="flex flex-wrap gap-3 text-xs text-gray-500">
+                                    <span>🛏 @apt.Beds paturi</span>
+                                    <span>🚿 @apt.Bathrooms băi</span>
+                                    <span>📐 @apt.Area</span>
+                                    <span>👥 max @apt.MaxGuests persoane</span>
+                                </div>
+
+                                <!-- Features -->
+                                <div class="flex flex-wrap gap-1.5">
+                                    @foreach (var flag in Enum.GetValues<ApartmentFeature>().Where(f => f != ApartmentFeature.None && apt.Features.HasFlag(f)))
+                                    {
+                                        <span class="px-2 py-0.5 text-xs bg-green-50 text-green-700 rounded-full">@FormatEnum(flag.ToString())</span>
+                                    }
+                                </div>
+
+                                <!-- Rules -->
+                                @if (apt.Rules is not null)
+                                {
+                                    <div class="flex flex-wrap gap-3 text-xs text-gray-400">
+                                        <span>🕐 Check-in: @apt.Rules.CheckIn.ToString("HH:mm")</span>
+                                        <span>🕐 Check-out: @apt.Rules.CheckOut.ToString("HH:mm")</span>
+                                        <span>🐾 Animale: @(apt.Rules.PetsAllowed ? "Da" : "Nu")</span>
+                                        <span>🚬 Fumat: @(apt.Rules.SmokingAllowed ? "Da" : "Nu")</span>
+                                    </div>
+                                }
+
+                                <!-- Price -->
+                                <div class="flex items-center gap-3 pt-2 border-t border-gray-100">
+                                    <span class="px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-full">@apt.PricePerDay €/noapte</span>
+                                    @if (totalPrice > 0)
+                                    {
+                                        <span class="px-3 py-1 text-xs font-bold bg-brand-600 text-white rounded-full">Total: @totalPrice € / @Model.Days nopți</span>
+                                    }
+                                </div>
+
+                                <!-- Reviews -->
+                                @if (apt.Reviews.Count > 0)
+                                {
+                                    var lastReview = apt.Reviews.Last();
+                                    <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                                        <p class="text-gray-600 italic">"@lastReview.Comment"</p>
+                                        <p class="text-xs text-gray-400 mt-1">— @lastReview.UserName, @lastReview.Date.ToString("dd.MM.yyyy")</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (r is EventVenue ev)
+                {
+                    <!-- EVENT CARD -->
+                    <div class="bg-white rounded-xl shadow-sm hover:shadow-lg transition overflow-hidden border border-gray-200">
+                        <div class="flex flex-col md:flex-row">
+                            <div class="md:w-1/3 h-56 md:h-auto">
+                                @if (ev.Images.Count > 0)
+                                {
+                                    <img src="@ev.Images[0]" alt="@ev.Name" class="w-full h-full object-cover" />
+                                }
+                                else
+                                {
+                                    <div class="h-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
+                                        <span class="text-5xl">🎉</span>
+                                    </div>
+                                }
+                            </div>
+                            <div class="md:w-2/3 p-5 space-y-3">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-gray-800">@ev.Name</h3>
+                                        @if (ev.Location is not null)
+                                        {
+                                            <p class="text-sm text-gray-500">📍 @ev.Location.City, @ev.Location.Country</p>
+                                        }
+                                    </div>
+                                    <span class="px-2 py-1 text-xs font-semibold bg-amber-100 text-amber-700 rounded-full">@ev.Category</span>
+                                </div>
+                                <p class="text-sm text-gray-600">@ev.Description</p>
+
+                                <!-- Event Details -->
+                                <div class="flex flex-wrap gap-3 text-xs text-gray-500">
+                                    <span>👥 Capacitate: @ev.Capacity.ToString("N0")</span>
+                                    @if (ev.EventDate.HasValue)
+                                    {
+                                        <span>📅 @ev.EventDate.Value.ToString("dd.MM.yyyy")</span>
+                                    }
+                                    @if (ev.StartTime.HasValue && ev.EndTime.HasValue)
+                                    {
+                                        <span>🕐 @ev.StartTime.Value.ToString("HH:mm") – @ev.EndTime.Value.ToString("HH:mm")</span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(ev.Duration))
+                                    {
+                                        <span>⏱ @ev.Duration</span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(ev.AgeRestriction))
+                                    {
+                                        <span>🔞 @ev.AgeRestriction</span>
+                                    }
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(ev.Organizer))
+                                {
+                                    <p class="text-xs text-gray-400">🎯 Organizator: @ev.Organizer</p>
+                                }
+
+                                <!-- Facilities -->
+                                <div class="flex flex-wrap gap-1.5">
+                                    @foreach (var flag in Enum.GetValues<EventFacility>().Where(f => f != EventFacility.None && ev.Facilities.HasFlag(f)))
+                                    {
+                                        <span class="px-2 py-0.5 text-xs bg-amber-50 text-amber-700 rounded-full">@FormatEnum(flag.ToString())</span>
+                                    }
+                                </div>
+
+                                <!-- Price -->
+                                <div class="flex items-center gap-3 pt-2 border-t border-gray-100">
+                                    <span class="px-3 py-1 text-xs font-semibold bg-amber-100 text-amber-700 rounded-full">@ev.BasePricePerDay €/zi</span>
+                                    @if (totalPrice > 0)
+                                    {
+                                        <span class="px-3 py-1 text-xs font-bold bg-brand-600 text-white rounded-full">Total: @totalPrice € / @Model.Days zile</span>
+                                    }
+                                </div>
+
+                                <!-- Reviews -->
+                                @if (ev.Reviews.Count > 0)
+                                {
+                                    var lastReview = ev.Reviews.Last();
+                                    <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                                        <p class="text-gray-600 italic">"@lastReview.Comment"</p>
+                                        <p class="text-xs text-gray-400 mt-1">— @lastReview.UserName, @lastReview.Date.ToString("dd.MM.yyyy")</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    }
+    else if (Model.Category is not null)
+    {
+        <p class="text-gray-400 text-center py-8">Niciun rezultat găsit.</p>
+    }
+</section>
+
+@functions {
+    private static string FormatEnum(string name)
+    {
+        // "FreeWiFi" → "Free WiFi", "AirConditioning" → "Air Conditioning"
+        return System.Text.RegularExpressions.Regex.Replace(name, "(?<=[a-z])(?=[A-Z])", " ");
+    }
+}
