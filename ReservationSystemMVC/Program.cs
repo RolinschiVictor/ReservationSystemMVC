@@ -8,7 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 // Singleton – same in-memory list shared across all requests (seed data persists)
 builder.Services.AddSingleton<IResourceRepository, InMemoryResourceRepository>();
-builder.Services.AddSingleton<ReservationPricingService>();
+// SINGLETON PATTERN – register the single instance from the Singleton class itself
+builder.Services.AddSingleton(ReservationPricingService.Instance);
 
 var app = builder.Build();
 

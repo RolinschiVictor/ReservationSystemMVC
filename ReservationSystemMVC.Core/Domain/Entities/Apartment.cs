@@ -31,5 +31,28 @@ namespace ReservationSystemMVC.Core.Domain.Entities
         }
 
         public override string Describe() => $"Apartment: {Name}, rooms={Rooms}, {PricePerDay}€/day";
+
+        /// <summary>
+        /// PROTOTYPE PATTERN – deep copy with new Id.
+        /// Useful for creating apartment variations in different cities.
+        /// </summary>
+        public override BookableResource Clone()
+        {
+            var copy = new Apartment(Name, Rooms, PricePerDay)
+            {
+                Description = Description,
+                Location = Location,
+                Rating = Rating,
+                Images = [.. Images],
+                Features = Features,
+                Beds = Beds,
+                Bathrooms = Bathrooms,
+                Area = Area,
+                MaxGuests = MaxGuests,
+                Rules = Rules,
+                Reviews = [.. Reviews]
+            };
+            return copy;
+        }
     }
 }

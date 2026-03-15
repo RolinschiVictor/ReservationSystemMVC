@@ -32,5 +32,29 @@ namespace ReservationSystemMVC.Core.Domain.Entities
         }
 
         public override string Describe() => $"EventVenue: {Name}, capacity={Capacity}, {BasePricePerDay}€/day";
+
+        /// <summary>
+        /// PROTOTYPE PATTERN – deep copy with new Id.
+        /// Useful for cloning event templates for recurring events.
+        /// </summary>
+        public override BookableResource Clone()
+        {
+            var copy = new EventVenue(Name, Capacity, BasePricePerDay)
+            {
+                Description = Description,
+                Category = Category,
+                Location = Location,
+                EventDate = EventDate,
+                StartTime = StartTime,
+                EndTime = EndTime,
+                Images = [.. Images],
+                Organizer = Organizer,
+                Duration = Duration,
+                AgeRestriction = AgeRestriction,
+                Facilities = Facilities,
+                Reviews = [.. Reviews]
+            };
+            return copy;
+        }
     }
 }

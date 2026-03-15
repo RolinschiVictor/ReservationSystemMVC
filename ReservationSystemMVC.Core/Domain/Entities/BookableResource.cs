@@ -3,10 +3,14 @@ using System;
 
 namespace ReservationSystemMVC.Core.Domain.Entities
 {
-    public abstract class BookableResource : IBookableResource
+
+    /// Base class for all bookable resources.
+    /// Implements IPrototype for the PROTOTYPE PATTERN.
+
+    public abstract class BookableResource : IBookableResource, IPrototype<BookableResource>
     {
-        public Guid Id { get; } = Guid.NewGuid();
-        public string Name { get; protected set; }
+        public Guid Id { get; protected set; } = Guid.NewGuid();
+        public string Name { get; set; }
 
         protected BookableResource(string name)
         {
@@ -15,5 +19,9 @@ namespace ReservationSystemMVC.Core.Domain.Entities
         }
 
         public abstract string Describe();
+
+        /// PROTOTYPE PATTERN – creates a deep copy with a new unique Id.
+
+        public abstract BookableResource Clone();
     }
 }
