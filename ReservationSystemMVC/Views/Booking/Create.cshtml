@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = "Crează Rezervare";
+}
+
+<div class="container mt-5">
+    <h2>Efectuați o Rezervare</h2>
+
+    <!-- Afișarea erorilor de validare prinse din Controller (ex: "Data Trecută") -->
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">
+            @ViewBag.ErrorMessage
+        </div>
+    }
+
+    <form method="post" asp-controller="Booking" asp-action="Create">
+        <!-- Salvăm ResourceId invizibil -->
+        <input type="hidden" name="resourceId" value="@ViewBag.ResourceId" />
+        
+        <div class="mb-3">
+            <label for="userEmail" class="form-label">Email</label>
+            <input type="email" class="form-control" id="userEmail" name="userEmail" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="startDate" class="form-label">Data Check-In / Început</label>
+            <input type="date" class="form-control" id="startDate" name="startDate" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="endDate" class="form-label">Data Check-Out / Final</label>
+            <input type="date" class="form-control" id="endDate" name="endDate" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Confirmă Rezervarea</button>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Anulează</a>
+    </form>
+
+    <div class="mt-4">
+        <h4>Rezervări Rapid</h4>
+        <!-- Aici puteți adăuga logică pentru a lista rapid opțiunile de rezervare -->
+        @foreach (var item in Model.AvailableResources)
+        {
+            <a asp-controller="Booking" asp-action="Create" asp-route-resourceId="@item.Id" class="btn btn-success">
+                Rezervă acum pentru @item.Name
+            </a>
+        }
+    </div>
+</div>
