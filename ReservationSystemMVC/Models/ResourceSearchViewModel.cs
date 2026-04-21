@@ -21,5 +21,11 @@ public class ResourceSearchViewModel
     /// </summary>
     public Dictionary<Guid, decimal> TotalPrices { get; set; } = [];
 
+    /// <summary>
+    /// Remaining slots for selected period.
+    /// Key = resource Id, Value = remaining available reservation slots.
+    /// </summary>
+    public Dictionary<Guid, int> AvailableSlots { get; set; } = [];
+
     public string? Message { get; set; }
 }

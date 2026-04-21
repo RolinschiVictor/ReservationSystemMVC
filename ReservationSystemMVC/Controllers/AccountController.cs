@@ -19,13 +19,14 @@ public class AccountController : Controller
     }
 
     [HttpGet]
-    public IActionResult Login()
+    public IActionResult Login(string? returnUrl = null)
     {
+        ViewBag.ReturnUrl = returnUrl;
         return View();
     }
 
     [HttpPost]
-    public async Task<IActionResult> Login(string email, string password)
+    public async Task<IActionResult> Login(string email, string password, string? returnUrl = null)
     {
         var user = _userRepository.GetUserByEmail(email);
 
@@ -34,7 +35,9 @@ public class AccountController : Controller
         {
             var claims = new List<Claim>
             {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Email),
+                new Claim("full_name", user.FullName),
                 new Claim(ClaimTypes.Role, user.Role)
             };
 
@@ -52,6 +55,11 @@ public class AccountController : Controller
                 return RedirectToAction("Dashboard", "Admin");
             }
 
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
             return RedirectToAction("Index", "Home");
         }
 
@@ -66,8 +74,14 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    public IActionResult Register(string email, string password)
+    public IActionResult Register(string fullName, string email, string password)
     {
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            ViewBag.ErrorMessage = "Numele este obligatoriu.";
+            return View();
+        }
+
         if (_userRepository.GetUserByEmail(email) != null)
         {
             ViewBag.ErrorMessage = "Email already in use.";
@@ -77,6 +91,7 @@ public class AccountController : Controller
         // 2. Fix Register logic (Force Role = "User")
         var newUser = new User
         {
+            FullName = fullName,
             Email = email,
             PasswordHash = password, // Remember to hash in real apps
             Role = "User" // NEVER trust UI for the role

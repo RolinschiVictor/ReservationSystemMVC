@@ -1,3 +1,5 @@
+@model ReservationSystemMVC.Models.BookingCreateViewModel
+
 @{
     ViewData["Title"] = "Crează Rezervare";
 }
@@ -5,31 +7,70 @@
 <div class="container mt-5">
     <h2>Efectuați o Rezervare</h2>
 
-    <!-- Afișarea erorilor de validare prinse din Controller (ex: "Data Trecută") -->
-    @if (ViewBag.ErrorMessage != null)
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
         <div class="alert alert-danger">
-            @ViewBag.ErrorMessage
+            @Model.ErrorMessage
         </div>
     }
 
     <form method="post" asp-controller="Booking" asp-action="Create">
-        <!-- Salvăm ResourceId invizibil -->
-        <input type="hidden" name="resourceId" value="@ViewBag.ResourceId" />
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="ResourceId" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ResourceName))
+        {
+            <div class="alert alert-info">Rezervi: <strong>@Model.ResourceName</strong></div>
+        }
+
+        <div class="mb-3">
+            <label asp-for="FullName" class="form-label"></label>
+            <input asp-for="FullName" class="form-control" required />
+            <span asp-validation-for="FullName" class="text-danger"></span>
+        </div>
         
         <div class="mb-3">
-            <label for="userEmail" class="form-label">Email</label>
-            <input type="email" class="form-control" id="userEmail" name="userEmail" required />
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" type="email" class="form-control" required />
+            <span asp-validation-for="Email" class="text-danger"></span>
         </div>
 
         <div class="mb-3">
-            <label for="startDate" class="form-label">Data Check-In / Început</label>
-            <input type="date" class="form-control" id="startDate" name="startDate" required />
+            <label asp-for="PhoneNumber" class="form-label"></label>
+            <input asp-for="PhoneNumber" class="form-control" required />
+            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
         </div>
 
         <div class="mb-3">
-            <label for="endDate" class="form-label">Data Check-Out / Final</label>
-            <input type="date" class="form-control" id="endDate" name="endDate" required />
+            <label asp-for="StartDate" class="form-label"></label>
+            <input asp-for="StartDate" type="date" class="form-control" id="startDate" min="@Model.MinDate" required />
+            <span asp-validation-for="StartDate" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="EndDate" class="form-label"></label>
+            <input asp-for="EndDate" type="date" class="form-control" id="endDate" min="@Model.MinDate" required />
+            <span asp-validation-for="EndDate" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="GuestsCount" class="form-label"></label>
+            <input asp-for="GuestsCount" type="number" min="1" class="form-control" required />
+            <span asp-validation-for="GuestsCount" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="SpecialRequests" class="form-label"></label>
+            <textarea asp-for="SpecialRequests" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="SpecialRequests" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Preț total estimat</label>
+            <input type="text" class="form-control" id="totalPriceText" value="@Model.TotalPrice €" readonly />
+            <input type="hidden" asp-for="TotalPrice" id="totalPrice" />
+            <small id="availabilityText" class="form-text text-muted"></small>
         </div>
 
         <button type="submit" class="btn btn-primary">Confirmă Rezervarea</button>
@@ -38,7 +79,6 @@
 
     <div class="mt-4">
         <h4>Rezervări Rapid</h4>
-        <!-- Aici puteți adăuga logică pentru a lista rapid opțiunile de rezervare -->
         @foreach (var item in Model.AvailableResources)
         {
             <a asp-controller="Booking" asp-action="Create" asp-route-resourceId="@item.Id" class="btn btn-success">
@@ -47,3 +87,53 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const startInput = document.getElementById('startDate');
+            const endInput = document.getElementById('endDate');
+            const resourceIdInput = document.getElementById('ResourceId');
+            const totalPriceInput = document.getElementById('totalPrice');
+            const totalPriceText = document.getElementById('totalPriceText');
+            const availabilityText = document.getElementById('availabilityText');
+
+            async function refreshQuote() {
+                if (!startInput?.value || !endInput?.value || !resourceIdInput?.value) {
+                    return;
+                }
+
+                const url = `/Booking/Quote?resourceId=${encodeURIComponent(resourceIdInput.value)}&startDate=${encodeURIComponent(startInput.value)}&endDate=${encodeURIComponent(endInput.value)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (!data.valid) {
+                    availabilityText.textContent = data.message || 'Date invalide.';
+                    return;
+                }
+
+                totalPriceInput.value = data.totalPrice;
+                totalPriceText.value = `${data.totalPrice} €`;
+                availabilityText.textContent = data.isAvailable
+                    ? `Disponibil. Locuri rămase: ${data.availableSlots}`
+                    : 'Indisponibil pentru perioada selectată.';
+            }
+
+            function syncEndMin() {
+                if (!startInput || !endInput) return;
+                endInput.min = startInput.value || '@Model.MinDate';
+                if (endInput.value && startInput.value && endInput.value <= startInput.value) {
+                    endInput.value = '';
+                }
+                refreshQuote();
+            }
+
+            if (startInput && endInput) {
+                startInput.addEventListener('change', syncEndMin);
+                endInput.addEventListener('change', refreshQuote);
+                syncEndMin();
+            }
+        })();
+    </script>
+}

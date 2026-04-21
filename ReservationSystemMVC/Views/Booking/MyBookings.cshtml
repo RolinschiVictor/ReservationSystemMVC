@@ -1,0 +1,38 @@
+@model IEnumerable<ReservationSystemMVC.Models.BookingListItemViewModel>
+
+@{
+    ViewData["Title"] = "Rezervările mele";
+}
+
+<h2 class="text-2xl font-bold mb-4">Rezervările mele</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Nu ai rezervări încă.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Resursă</th>
+                <th>Perioadă</th>
+                <th>Persoane</th>
+                <th>Total</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var booking in Model)
+            {
+                <tr>
+                    <td>@booking.ResourceName</td>
+                    <td>@booking.StartDate:dd.MM.yyyy - @booking.EndDate:dd.MM.yyyy</td>
+                    <td>@booking.GuestsCount</td>
+                    <td>@booking.TotalPrice €</td>
+                    <td>@booking.Status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

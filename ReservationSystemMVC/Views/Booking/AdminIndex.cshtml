@@ -1,0 +1,49 @@
+@model IEnumerable<ReservationSystemMVC.Models.BookingListItemViewModel>
+@using ReservationSystemMVC.Core.Domain.Enums
+
+@{
+    ViewData["Title"] = "Toate rezervările";
+}
+
+<h2 class="text-2xl font-bold mb-4">Admin - Toate rezervările</h2>
+
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Resursă</th>
+            <th>Client</th>
+            <th>Perioadă</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Acțiuni</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var booking in Model)
+    {
+        <tr>
+            <td>@booking.ResourceName</td>
+            <td>
+                <div>@booking.UserName</div>
+                <small class="text-muted">@booking.UserEmail</small>
+            </td>
+            <td>@booking.StartDate:dd.MM.yyyy - @booking.EndDate:dd.MM.yyyy</td>
+            <td>@booking.TotalPrice €</td>
+            <td>@booking.Status</td>
+            <td>
+                <form asp-controller="Booking" asp-action="UpdateStatus" method="post" class="d-flex gap-2">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="bookingId" value="@booking.Id" />
+                    <select name="status" class="form-select form-select-sm">
+                        @foreach (var status in Enum.GetValues<BookingStatus>())
+                        {
+                            <option value="@status" selected="@(status == booking.Status)">@status</option>
+                        }
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary">Salvează</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

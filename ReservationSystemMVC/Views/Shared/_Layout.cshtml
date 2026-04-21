@@ -57,12 +57,12 @@
 
                 @if (User?.Identity?.IsAuthenticated ?? false)
                 {
-                    <a asp-controller="Home" asp-action="Index" asp-fragment="reservations"
+                    <a asp-controller="Booking" asp-action="MyBookings"
                        class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">My Reservations</a>
                 }
                 @if (User?.IsInRole("Admin") ?? false)
                 {
-                    <a asp-controller="Home" asp-action="Index" asp-fragment="admin"
+                    <a asp-controller="Booking" asp-action="AdminIndex"
                        class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">Admin</a>
                 }
 
@@ -70,13 +70,22 @@
                 @if (User?.Identity?.IsAuthenticated ?? false)
                 {
                     <span class="ml-4 text-sm text-gray-500">Salut, <strong>@User.Identity!.Name</strong></span>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="inline ml-2">
+                        <button type="submit" class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">Logout</button>
+                    </form>
                 }
                 else
                 {
-                    <a asp-controller="Home" asp-action="Index" asp-fragment="auth"
-                       class="ml-4 inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-brand-600 rounded-lg hover:bg-brand-700 transition">
-                        Login / Register
-                    </a>
+                    <div class="ml-4 flex items-center gap-2">
+                        <a asp-controller="Account" asp-action="Login"
+                           class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-brand-600 rounded-lg hover:bg-brand-700 transition">
+                            Login
+                        </a>
+                        <a asp-controller="Account" asp-action="Register"
+                           class="inline-flex items-center px-4 py-2 text-sm font-semibold text-brand-600 border border-brand-600 rounded-lg hover:bg-brand-50 transition">
+                            Register
+                        </a>
+                    </div>
                 }
             </div>
         </nav>
@@ -90,11 +99,12 @@
             <a asp-controller="Home" asp-action="Index" asp-fragment="events" class="block py-2 text-sm text-gray-600 hover:text-brand-600">Events</a>
             @if (User?.Identity?.IsAuthenticated ?? false)
             {
-                <a asp-controller="Home" asp-action="Index" asp-fragment="reservations" class="block py-2 text-sm text-gray-600 hover:text-brand-600">My Reservations</a>
+                <a asp-controller="Booking" asp-action="MyBookings" class="block py-2 text-sm text-gray-600 hover:text-brand-600">My Reservations</a>
             }
             @if (!User?.Identity?.IsAuthenticated ?? true)
             {
-                <a asp-controller="Home" asp-action="Index" asp-fragment="auth" class="block py-2 text-sm font-semibold text-brand-600">Login / Register</a>
+                <a asp-controller="Account" asp-action="Login" class="block py-2 text-sm font-semibold text-brand-600">Login</a>
+                <a asp-controller="Account" asp-action="Register" class="block py-2 text-sm font-semibold text-brand-600">Register</a>
             }
         </div>
     </header>
