@@ -69,7 +69,10 @@
                 <!-- Auth area -->
                 @if (User?.Identity?.IsAuthenticated ?? false)
                 {
-                    <span class="ml-4 text-sm text-gray-500">Salut, <strong>@User.Identity!.Name</strong></span>
+                    var fullName = User.Claims.FirstOrDefault(c => c.Type == "full_name")?.Value ?? User.Identity!.Name ?? "";
+                    var firstName = fullName.Split(' ')[0];
+
+                    <span class="ml-4 text-sm text-gray-500">Salut, <strong>@firstName</strong>!</span>
                     <form asp-controller="Account" asp-action="Logout" method="post" class="inline ml-2">
                         <button type="submit" class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">Logout</button>
                     </form>

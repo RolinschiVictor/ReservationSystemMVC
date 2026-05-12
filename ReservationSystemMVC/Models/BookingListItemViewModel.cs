@@ -15,4 +15,5 @@ public class BookingListItemViewModel
     public decimal TotalPrice { get; set; }
     public BookingStatus Status { get; set; }
     public DateTime CreatedAtUtc { get; set; }
+    public string PaymentProvider { get; set; } = string.Empty;
 }

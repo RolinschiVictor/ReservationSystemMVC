@@ -20,6 +20,7 @@ else
                 <th>Persoane</th>
                 <th>Total</th>
                 <th>Status</th>
+                <th>Metoda de Plată</th>
             </tr>
         </thead>
         <tbody>
@@ -27,10 +28,11 @@ else
             {
                 <tr>
                     <td>@booking.ResourceName</td>
-                    <td>@booking.StartDate:dd.MM.yyyy - @booking.EndDate:dd.MM.yyyy</td>
+                    <td>@booking.StartDate.ToString("dd.MM.yyyy") - @booking.EndDate.ToString("dd.MM.yyyy")</td>
                     <td>@booking.GuestsCount</td>
                     <td>@booking.TotalPrice €</td>
                     <td>@booking.Status</td>
+                    <td>@booking.PaymentProvider</td>
                 </tr>
             }
         </tbody>

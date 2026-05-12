@@ -45,6 +45,7 @@ public static class DataSeeder
             .AddReview("Alex T.", 4.5, "Locație perfectă, spa-ul este fenomenal.", new DateOnly(2025, 5, 2))
             .AddReview("John S.", 4.7, "Great business hotel, excellent meeting rooms.", new DateOnly(2025, 4, 20))
             .Build();
+        marriott.Id = Guid.Parse("cae27f6e-fbb7-4be7-ba48-936ce4afbd36");
         repo.Add(marriott);
 
         // ── 2. Athenee Palace Hilton (built with Builder) ──
@@ -65,6 +66,7 @@ public static class DataSeeder
             .AddReview("Elena R.", 4.8, "Locație de vis, chiar lângă Ateneu. Camera cu vedere superbă.", new DateOnly(2025, 2, 10))
             .AddReview("David M.", 4.3, "Beautiful historic hotel but rooms could use some updating.", new DateOnly(2025, 6, 1))
             .Build();
+        hilton.Id = Guid.Parse("7d710cd7-2eec-4a7b-871d-557ca2de8285");
         repo.Add(hilton);
 
         // ── 3. Radisson Blu (built with Builder) ──
@@ -124,6 +126,7 @@ public static class DataSeeder
             .AddReview("Catherine B.", 5.0, "Un rêve devenu réalité. Service impecabil.", new DateOnly(2025, 2, 14))
             .AddReview("Mark W.", 4.9, "Once in a lifetime experience. Worth every euro.", new DateOnly(2025, 4, 30))
             .Build();
+        ritz.Id = Guid.Parse("eade9da3-02f6-48c2-a42e-1e90ef8c3acc");
         repo.Add(ritz);
 
         // ══════════════════════════════════════════════════════
@@ -169,6 +172,7 @@ public static class DataSeeder
             .AddReview("Ioana M.", 4.8, "Locație excelentă, apartament curat și modern. Recomand!", new DateOnly(2025, 4, 5))
             .AddReview("Thomas H.", 4.4, "Perfect location for exploring Old Town. Kitchen well equipped.", new DateOnly(2025, 5, 18))
             .Build();
+        oldTown.Id = Guid.Parse("35fdfcca-4c28-4e89-9a2c-fdbda6376fc6");
         repo.Add(oldTown);
 
         var herastrau = new ApartmentBuilder()
@@ -184,6 +188,7 @@ public static class DataSeeder
             .AddReview("Cristina D.", 4.9, "Vedere superbă, copiii au adorat parcul din apropiere!", new DateOnly(2025, 6, 2))
             .AddReview("James R.", 4.5, "Spacious, clean, and the park is a bonus. Great for families.", new DateOnly(2025, 5, 10))
             .Build();
+        herastrau.Id = Guid.Parse("2afbfe7c-86e5-4f43-85f2-9fa913076c5b");
         repo.Add(herastrau);
 
         // ══════════════════════════════════════════════════════
@@ -236,6 +241,7 @@ public static class DataSeeder
             .SetFacilities(EventFacility.Parking | EventFacility.Food | EventFacility.Bar | EventFacility.SeatsAvailable)
             .AddReview("Vlad N.", 4.3, "Spațiu generos, organizare bună. Parcarea e aglomerată.", new DateOnly(2025, 10, 5))
             .Build();
+        romexpo.Id = Guid.Parse("01e0c4b6-455b-43a0-97eb-bd1b161279de");
         repo.Add(romexpo);
 
         var salaPalatului = new EventVenueBuilder()
@@ -248,10 +254,8 @@ public static class DataSeeder
             .SetTimes(new TimeOnly(19, 0), new TimeOnly(22, 30))
             .SetOrganizer("Events International").SetDuration("3.5 ore").SetAgeRestriction("12+")
             .AddImage("https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=600")
-            .SetFacilities(EventFacility.Parking | EventFacility.Bar | EventFacility.VIPArea | EventFacility.SeatsAvailable)
-            .AddReview("Ana V.", 4.8, "Acustică incredibilă! Experiență de neuitat.", new DateOnly(2025, 11, 12))
-            .AddReview("Cristian M.", 4.6, "Locurile VIP merită investiția.", new DateOnly(2025, 12, 1))
             .Build();
+        salaPalatului.Id = Guid.Parse("bd5c2e39-7567-425b-ae22-5ea57cc09562");
         repo.Add(salaPalatului);
 
         var clujArena = new EventVenueBuilder()
@@ -266,25 +270,9 @@ public static class DataSeeder
             .AddImage("https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600")
             .SetFacilities(EventFacility.Parking | EventFacility.Food | EventFacility.Bar | EventFacility.VIPArea | EventFacility.SeatsAvailable)
             .AddReview("Diana P.", 5.0, "Untold este cel mai bun festival din Europa!", new DateOnly(2025, 8, 10))
-            .AddReview("Martin K.", 4.7, "Amazing atmosphere, well organized.", new DateOnly(2025, 8, 12))
+            .AddReview("Ionut M.", 4.8, "Super concert, sunet impecabil, acces facil.", new DateOnly(2025, 8, 10))
             .Build();
+        clujArena.Id = Guid.Parse("5db16499-5095-46fd-b5f7-f8f237bb91dd");
         repo.Add(clujArena);
-
-        // ══════════════════════════════════════════════════════
-        // PROTOTYPE PATTERN: clone Sala Palatului for Iasi venue
-        // (same facilities/category template, different location)
-        // ══════════════════════════════════════════════════════
-        var iasiVenue = (EventVenue)salaPalatului.Clone();
-        iasiVenue.Name = "Palatul Culturii Iași";
-        iasiVenue.Description = "Monument istoric și centru cultural, ideal pentru conferințe, spectacole de teatru și evenimente academice.";
-        iasiVenue.Category = EventCategory.Conference;
-        iasiVenue.Location = new Location("Iași", "Bd. Ștefan cel Mare și Sfânt 1", "România");
-        iasiVenue.EventDate = new DateOnly(2026, 10, 10);
-        iasiVenue.Organizer = "Primăria Iași";
-        iasiVenue.Duration = "2 zile";
-        iasiVenue.AgeRestriction = null;
-        iasiVenue.Images = ["https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=600"];
-        iasiVenue.Reviews = [new Review("Gabriela I.", 4.5, "Atmosferă specială, clădirea este impresionantă.", new DateOnly(2025, 10, 20))];
-        repo.Add(iasiVenue);
     }
 }

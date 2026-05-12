@@ -8,8 +8,16 @@ public class Payment
     public Guid BookingId { get; set; }
     public long AmountInCents { get; set; }
     public string Currency { get; set; } = "eur";
+
+    // Stripe specific
     public string StripeSessionId { get; set; } = string.Empty;
     public string StripePaymentIntentId { get; set; } = string.Empty;
+
+    // PayPal specific
+    public string PayPalOrderId { get; set; } = string.Empty;
+
+    // Generic
+    public string Provider { get; set; } = "Stripe";
     public string Status { get; set; } = "Pending";
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? PaidAtUtc { get; set; }

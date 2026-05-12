@@ -50,4 +50,7 @@ public class BookingCreateViewModel
     public string MinDate { get; set; } = DateTime.Today.ToString("yyyy-MM-dd");
     public string? ResourceName { get; set; }
     public string? ErrorMessage { get; set; }
+
+    [Required]
+    public string PaymentProvider { get; set; } = "Stripe";
 }

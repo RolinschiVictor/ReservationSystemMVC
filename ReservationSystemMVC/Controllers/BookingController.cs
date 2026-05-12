@@ -14,6 +14,10 @@ using ReservationSystemMVC.Infrastructure.Data;
 using ReservationSystemMVC.Models;
 using Stripe.Checkout;
 using Stripe;
+using PayPalCheckoutSdk.Core;
+using PayPalCheckoutSdk.Orders;
+using Order = PayPalCheckoutSdk.Orders.Order;
+using System.Collections.Generic;
 
 namespace ReservationSystemMVC.Controllers;
 
@@ -110,23 +114,80 @@ public class BookingController : Controller
                 vm.SpecialRequests,
                 totalPrice);
 
-            var session = CreateStripeSession(booking, resource!.Name);
-
-            _dbContext.Payments.Add(new Payment
+            if (vm.PaymentProvider == "PayPal")
             {
-                BookingId = booking.Id,
-                AmountInCents = (long)Math.Round(totalPrice * 100m),
-                StripeSessionId = session.Id,
-                Status = "Pending"
-            });
-            _dbContext.SaveChanges();
+                var clientId = _configuration["PayPal:ClientId"] ?? "dummy_client_id";
+                var secret = _configuration["PayPal:Secret"] ?? "dummy_secret";
+                var env = new SandboxEnvironment(clientId, secret);
+                var client = new PayPalHttpClient(env);
 
-            return Redirect(session.Url!);
+                var orderRequest = new OrdersCreateRequest();
+                orderRequest.Prefer("return=representation");
+                var amountFormatted = totalPrice.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+
+                orderRequest.RequestBody(new OrderRequest()
+                {
+                    CheckoutPaymentIntent = "CAPTURE",
+                    PurchaseUnits = new List<PurchaseUnitRequest>
+                    {
+                        new PurchaseUnitRequest
+                        {
+                            AmountWithBreakdown = new AmountWithBreakdown
+                            {
+                                CurrencyCode = "EUR",
+                                Value = amountFormatted
+                            },
+                            Description = $"Rezervare {resource!.Name}"
+                        }
+                    },
+                    ApplicationContext = new ApplicationContext
+                    {
+                        ReturnUrl = $"{Request.Scheme}://{Request.Host}/Booking/PayPalSuccess?bookingId={booking.Id}",
+                        CancelUrl = $"{Request.Scheme}://{Request.Host}/Booking/Cancel?bookingId={booking.Id}"
+                    }
+                });
+
+                var response = client.Execute(orderRequest).Result;
+                var result = response.Result<Order>();
+
+                _dbContext.Payments.Add(new Payment
+                {
+                    BookingId = booking.Id,
+                    AmountInCents = (long)Math.Round(totalPrice * 100m),
+                    Currency = "eur",
+                    PayPalOrderId = result.Id,
+                    Provider = "PayPal",
+                    Status = "Pending",
+                    StripeSessionId = Guid.NewGuid().ToString() // Evităm eroarea de unicitate pe indexul StripeSessionId
+                });
+                _dbContext.SaveChanges();
+
+                var approveLink = result.Links.FirstOrDefault(l => l.Rel == "approve")?.Href;
+                return Redirect(approveLink!);
+            }
+            else
+            {
+                var session = CreateStripeSession(booking, resource!.Name);
+
+                _dbContext.Payments.Add(new Payment
+                {
+                    BookingId = booking.Id,
+                    AmountInCents = (long)Math.Round(totalPrice * 100m),
+                    Currency = "eur",
+                    StripeSessionId = session.Id,
+                    Provider = "Stripe",
+                    Status = "Pending"
+                });
+                _dbContext.SaveChanges();
+
+                return Redirect(session.Url!);
+            }
         }
         catch (Exception ex)
         {
             vm.AvailableResources = _resourceRepository.GetAll();
-            vm.ErrorMessage = ex.Message;
+            var innerMessage = ex.InnerException != null ? ex.InnerException.Message : "";
+            vm.ErrorMessage = $"A apărut o eroare la salvare: {ex.Message}. Detalii: {innerMessage}";
             return View(vm);
         }
     }
@@ -181,6 +242,44 @@ public class BookingController : Controller
     }
 
     [HttpGet]
+    public IActionResult PayPalSuccess(Guid bookingId, string token)
+    {
+        var clientId = _configuration["PayPal:ClientId"] ?? "dummy_client_id";
+        var secret = _configuration["PayPal:Secret"] ?? "dummy_secret";
+        var env = new SandboxEnvironment(clientId, secret);
+        var client = new PayPalHttpClient(env);
+
+        var request = new OrdersCaptureRequest(token);
+        request.RequestBody(new OrderActionRequest());
+
+        try
+        {
+            var response = client.Execute(request).Result;
+            var result = response.Result<Order>();
+
+            if (result.Status == "COMPLETED")
+            {
+                var payment = _dbContext.Payments.FirstOrDefault(p => p.BookingId == bookingId && p.Provider == "PayPal");
+                if (payment != null)
+                {
+                    payment.Status = "Completed";
+                    payment.PaidAtUtc = DateTime.UtcNow;
+                    _dbContext.SaveChanges();
+                }
+
+                _bookingService.UpdateBookingStatus(bookingId, BookingStatus.Confirmed);
+                return RedirectToAction("Success", new { bookingId = bookingId });
+            }
+        }
+        catch (Exception)
+        {
+            // Dacă capture-ul eșuează (fonduri insuficiente sau anulare) 
+        }
+
+        return RedirectToAction("Cancel", new { bookingId = bookingId });
+    }
+
+    [HttpGet]
     public IActionResult Success(Guid bookingId)
     {
         var booking = _bookingService.GetBookingById(bookingId);
@@ -206,8 +305,11 @@ public class BookingController : Controller
         }
 
         var resources = _resourceRepository.GetAll().ToDictionary(r => r.Id, r => r.Name);
-        var bookings = _bookingService
-            .GetBookingsForUser(userId.Value)
+        var rawBookings = _bookingService.GetBookingsForUser(userId.Value).ToList();
+        var bookingIds = rawBookings.Select(b => b.Id).ToList();
+        var payments = _dbContext.Payments.Where(p => bookingIds.Contains(p.BookingId)).ToDictionary(p => p.BookingId, p => p.Provider);
+
+        var bookings = rawBookings
             .Select(b => new BookingListItemViewModel
             {
                 Id = b.Id,
@@ -219,7 +321,8 @@ public class BookingController : Controller
                 GuestsCount = b.GuestsCount,
                 TotalPrice = b.TotalPrice,
                 Status = b.Status,
-                CreatedAtUtc = b.CreatedAtUtc
+                CreatedAtUtc = b.CreatedAtUtc,
+                PaymentProvider = payments.TryGetValue(b.Id, out var prov) ? prov : "Indisponibil"
             })
             .ToList();
 

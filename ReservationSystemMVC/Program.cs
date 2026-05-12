@@ -5,8 +5,12 @@ using ReservationSystemMVC.Infrastructure.Data;
 using ReservationSystemMVC.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Stripe API Key
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"] ?? "sk_test_1234567890abcdef";
 
 builder.Services.AddControllersWithViews();
 // Singleton – same in-memory list shared across all requests (seed data persists)

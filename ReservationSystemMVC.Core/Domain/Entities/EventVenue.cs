@@ -6,16 +6,14 @@ namespace ReservationSystemMVC.Core.Domain.Entities
     public class EventVenue : BookableResource
     {
         public int Capacity { get; private set; }
-        public decimal BasePricePerDay { get; private set; }
 
         // Professional properties
-        public string Description { get; set; } = "";
         public EventCategory Category { get; set; } = EventCategory.Other;
         public Location? Location { get; set; }
         public DateOnly? EventDate { get; set; }
         public TimeOnly? StartTime { get; set; }
         public TimeOnly? EndTime { get; set; }
-        public List<string> Images { get; set; } = [];
+        public new List<string> Images { get { return base.Images.ToList(); } set { base.Images = value.ToArray(); } }
         public string Organizer { get; set; } = "";
         public string Duration { get; set; } = "";
         public string? AgeRestriction { get; set; }
