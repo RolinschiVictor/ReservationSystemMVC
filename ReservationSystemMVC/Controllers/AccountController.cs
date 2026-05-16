@@ -36,7 +36,8 @@ public class AccountController : Controller
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Email),
+                new Claim(ClaimTypes.Name, user.FullName), // Set Name to FullName instead of Email
+                new Claim(ClaimTypes.Email, user.Email),
                 new Claim("full_name", user.FullName),
                 new Claim(ClaimTypes.Role, user.Role)
             };

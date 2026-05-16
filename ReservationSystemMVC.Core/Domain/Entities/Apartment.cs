@@ -6,13 +6,12 @@ namespace ReservationSystemMVC.Core.Domain.Entities
     public class Apartment : BookableResource
     {
         public int Rooms { get; private set; }
-        public decimal PricePerDay { get; private set; }
+        public decimal PricePerDay { get => BasePricePerDay; set => BasePricePerDay = value; }
 
         // Professional properties
-        public string Description { get; set; } = "";
         public Location? Location { get; set; }
         public double Rating { get; set; }
-        public List<string> Images { get; set; } = [];
+        public new List<string> Images { get { return base.Images.ToList(); } set { base.Images = value.ToArray(); } }
         public ApartmentFeature Features { get; set; } = ApartmentFeature.None;
         public int Beds { get; set; }
         public int Bathrooms { get; set; }
@@ -27,7 +26,7 @@ namespace ReservationSystemMVC.Core.Domain.Entities
             if (pricePerDay <= 0) throw new System.ArgumentException("Price invalid");
 
             Rooms = rooms;
-            PricePerDay = pricePerDay;
+            BasePricePerDay = pricePerDay;
         }
 
         public override string Describe() => $"Apartment: {Name}, rooms={Rooms}, {PricePerDay}€/day";

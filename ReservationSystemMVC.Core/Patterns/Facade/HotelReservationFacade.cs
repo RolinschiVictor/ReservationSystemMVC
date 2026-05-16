@@ -1,35 +1,34 @@
 using System;
+using System.Threading.Tasks;
+using ReservationSystemMVC.Core.Domain.Entities;
+using ReservationSystemMVC.Core.Patterns.FactoryMethod;
+using ReservationSystemMVC.Core.Patterns.Adapter;
 
 namespace ReservationSystemMVC.Core.Patterns.Facade;
 
 public class HotelReservationFacade
 {
-    private readonly InventoryService _inventory = new();
-    private readonly PricingService _pricing = new();
-    private readonly PaymentService _payment = new();
-    private readonly NotificationService _notification = new();
+    private readonly IPaymentFactory _paymentFactory;
 
-    public bool BookRoom(string hotelName, string roomType, DateOnly date, string clientEmail, string cardDetails)
+    public HotelReservationFacade(IPaymentFactory paymentFactory)
     {
-        Console.WriteLine($"--- Începere proces rezervare pentru {clientEmail} ---");
+        _paymentFactory = paymentFactory;
+    }
 
-        if (!_inventory.CheckAvailability(hotelName, roomType, date))
-        {
-            Console.WriteLine("Rezervare eșuată: Cameră indisponibilă.");
-            return false;
-        }
+    public async Task<PaymentSessionResponse> ProcessBookingPaymentAsync(Booking booking, BookableResource resource, string paymentProvider, string baseUrl)
+    {
+        Console.WriteLine($"--- �ncepere proces rezervare (prin Facade) pentru {booking.UserEmail} ---");
 
-        decimal totalAmount = _pricing.CalculateTotal(roomType, 1);
+        // Factory & Adapter sub Facade ascund complexitatea fa?a de Controller
+        var paymentProcessor = _paymentFactory.CreateProcessor(paymentProvider);
+        
+        var sessionResponse = await paymentProcessor.CreatePaymentSessionAsync(
+            booking, 
+            resource.Name, 
+            booking.TotalPrice, 
+            baseUrl);
 
-        if (!_payment.ProcessPayment(cardDetails, totalAmount))
-        {
-            Console.WriteLine("Rezervare eșuată: Plată respinsă.");
-            return false;
-        }
-
-        _notification.SendEmailConfirmation(clientEmail);
-
-        Console.WriteLine("--- Rezervare finalizată cu succes! ---");
-        return true;
+        Console.WriteLine("--- Rezervare ini?iata cu succes prin Facade! ---");
+        return sessionResponse;
     }
 }

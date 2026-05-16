@@ -9,8 +9,11 @@ namespace ReservationSystemMVC.Core.Domain.Entities
 
     public abstract class BookableResource : IBookableResource, IPrototype<BookableResource>
     {
-        public Guid Id { get; protected set; } = Guid.NewGuid();
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public decimal BasePricePerDay { get; set; }
+        public string[] Images { get; set; } = Array.Empty<string>();
 
         protected BookableResource(string name)
         {

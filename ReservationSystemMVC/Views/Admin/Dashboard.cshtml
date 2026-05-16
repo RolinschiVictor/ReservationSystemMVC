@@ -1,0 +1,39 @@
+@model IEnumerable<ReservationSystemMVC.Core.Domain.Entities.BookableResource>
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="container mt-4">
+    <h2>Admin Dashboard</h2>
+    <a asp-action="CreateHotel" class="btn btn-primary mb-3">Add New Hotel Room (Builder Pattern)</a>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Base Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if(Model != null)
+            {
+                foreach(var item in Model)
+                {
+                    <tr>
+                        <td>@item.Name</td>
+                        <td>@item.GetType().Name</td>
+                        <td>@item.BasePricePerDay €</td>
+                        <td>
+                            <form asp-action="CloneResource" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn btn-warning btn-sm">Clone (Prototype)</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

@@ -13,4 +13,10 @@
     <Folder Include="Services\Payments\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.8" />
+    <PackageReference Include="PayPalCheckoutSdk" Version="1.0.4" />
+    <PackageReference Include="Stripe.net" Version="51.1.0" />
+  </ItemGroup>
+
 </Project>

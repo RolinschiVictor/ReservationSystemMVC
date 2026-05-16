@@ -17,5 +17,15 @@ namespace ReservationSystemMVC.Controllers
             var resources = _resourceRepository.GetAll();
             return View(resources);
         }
+
+        public IActionResult Details(Guid id)
+        {
+            var resource = _resourceRepository.GetById(id);
+            if (resource == null)
+            {
+                return NotFound();
+            }
+            return View(resource);
+        }
     }
 }

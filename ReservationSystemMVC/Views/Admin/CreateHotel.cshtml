@@ -1,0 +1,53 @@
+@model ReservationSystemMVC.Models.Admin.CreateHotelViewModel
+@{
+    ViewData["Title"] = "Create Hotel Room";
+}
+
+<div class="container mt-4">
+    <h2>Create New Hotel Room</h2>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-6">
+            <form asp-action="CreateHotel" method="post">
+                <div class="form-group mb-3">
+                    <label asp-for="Name">Name</label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="Beds">Number of Beds</label>
+                    <input asp-for="Beds" class="form-control" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="PricePerDay">Price Per Day (€)</label>
+                    <input asp-for="PricePerDay" class="form-control" step="0.01" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="Description">Description</label>
+                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                </div>
+
+                <h4>Location</h4>
+                <div class="form-group mb-3">
+                    <label asp-for="City">City</label>
+                    <input asp-for="City" class="form-control" />
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="Address">Address</label>
+                    <input asp-for="Address" class="form-control" />
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="Country">Country</label>
+                    <input asp-for="Country" class="form-control" />
+                </div>
+
+                <button type="submit" class="btn btn-success">Build & Save (Builder Pattern)</button>
+                <a asp-action="Dashboard" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>

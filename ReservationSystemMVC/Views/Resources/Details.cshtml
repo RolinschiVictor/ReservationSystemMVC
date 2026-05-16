@@ -1,0 +1,181 @@
+@model ReservationSystemMVC.Core.Domain.Entities.BookableResource
+@using System.Linq
+@using ReservationSystemMVC.Core.Domain.Entities
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+@{
+    ViewData["Title"] = "Detalii Resursă";
+    
+    // Obține cheia folosind inject
+    var googleMapsKey = Configuration["GoogleMaps:ApiKey"];
+    
+    // Explicit cast
+    HotelRoom hotel = Model as HotelRoom;
+    Apartment apartment = Model as Apartment;
+    EventVenue evt = Model as EventVenue;
+    
+    var formattedPrice = Model.BasePricePerDay.ToString("0.00") + " €";
+}
+
+<div class="container mx-auto mt-8 p-6 space-y-8 bg-gray-50">
+    <!-- Header Section -->
+    <div class="bg-white rounded-xl shadow-sm p-6 flex flex-col md:flex-row gap-8">
+        <div class="md:w-1/2">
+            <img src="@Model.Images.FirstOrDefault()" alt="@Model.Name" class="w-full h-96 rounded-lg shadow-md object-cover" />
+            
+            <!-- Minor gallery snapshot if more than 1 image available -->
+            @if(Model.Images.Count() > 1)
+            {
+                 <div class="flex gap-2 mt-4 overflow-x-auto">
+                    @foreach(var img in Model.Images.Skip(1).Take(4))
+                    {
+                         <img src="@img" class="w-24 h-24 rounded-lg object-cover cursor-pointer hover:opacity-80 transition" />
+                    }
+                 </div>
+            }
+        </div>
+        <div class="md:w-1/2 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">@Model.Name</h1>
+                    @if(hotel != null && hotel.Rating > 0)
+                    {
+                        <span class="text-lg font-bold text-yellow-600 bg-yellow-50 px-3 py-1 rounded">⭐ @hotel.Rating</span>
+                    }
+                    else if(apartment != null && apartment.Rating > 0)
+                    {
+                        <span class="text-lg font-bold text-yellow-600 bg-yellow-50 px-3 py-1 rounded">⭐ @apartment.Rating</span>
+                    }
+                </div>
+                <p class="text-sm font-semibold text-brand-600 uppercase tracking-wide mb-4">
+                     @(hotel != null ? "Hotel" : apartment != null ? "Apartament" : "Eveniment")
+                </p>
+                
+                @if(hotel != null && hotel.Location != null)
+                {
+                    <p class="text-gray-500 mb-4">📍 @hotel.Location.Address, @hotel.Location.City, @hotel.Location.Country</p>
+                }
+                else if(apartment != null && apartment.Location != null)
+                {
+                    <p class="text-gray-500 mb-4">📍 @apartment.Location.Address, @apartment.Location.City, @apartment.Location.Country</p>
+                }
+                else if(evt != null && evt.Location != null)
+                {
+                    <p class="text-gray-500 mb-4">📍 @evt.Location.Address, @evt.Location.City, @evt.Location.Country</p>
+                }
+
+                <p class="text-gray-700 text-lg mb-6 leading-relaxed">@Model.Description</p>
+                
+                <div class="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-100 flex justify-between items-center">
+                    <div>
+                        <p class="text-sm text-gray-500 font-semibold uppercase">Preț de bază</p>
+                        <p class="text-3xl font-bold text-brand-600">@formattedPrice <span class="text-sm text-gray-500 font-normal">/ unitate</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <a asp-controller="Booking" asp-action="Create" asp-route-resourceId="@Model.Id" 
+                   class="inline-block px-8 py-3 bg-brand-600 text-white font-bold rounded-lg shadow-md hover:bg-brand-700 transition w-full text-center text-lg">
+                    📅 Alege Date și Rezervă
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Tabs -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Column: Details & Features -->
+        <div class="lg:col-span-2 space-y-8">
+            <!-- Specific Features -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Caracteristici și Facilități</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    @if(hotel != null)
+                    {
+                        <div class="flex items-center text-gray-700"><span class="mr-2">🛏️</span> @hotel.Beds Paturi</div>
+                        <div class="flex items-center text-gray-700"><span class="mr-2">🏨</span> @hotel.Style.ToString()</div>
+                        <div class="flex items-center text-gray-700"><span class="mr-2">💎</span> Categorie: Lux</div>
+                        <!-- You can expand HotelAmenity flag enums here in a real scenario -->
+                    }
+                    else if (apartment != null)
+                    {
+                        <div class="flex items-center text-gray-700"><span class="mr-2">🛏️</span> @apartment.Beds Paturi</div>
+                        <div class="flex items-center text-gray-700"><span class="mr-2">🚪</span> @apartment.Rooms Camere</div>
+                        <div class="flex items-center text-gray-700"><span class="mr-2">🚿</span> @apartment.Bathrooms Băi</div>
+                        <div class="flex items-center text-gray-700"><span class="mr-2">👥</span> Max @apartment.MaxGuests oaspeți</div>
+                        <div class="flex items-center text-gray-700"><span class="mr-2">📏</span> Suprafață: @apartment.Area</div>
+                    }
+                    else if (evt != null)
+                    {
+                        <div class="flex items-center text-gray-700"><span class="mr-2">👥</span> Capacitate: @evt.Capacity</div>
+                        <div class="flex items-center text-gray-700"><span class="mr-2">🏢</span> Organizator: @evt.Organizer</div>
+                        <div class="flex items-center text-gray-700"><span class="mr-2">⏳</span> Durată: @evt.Duration</div>
+                        <div class="flex items-center text-gray-700"><span class="mr-2">🔞</span> Vârstă: @(string.IsNullOrEmpty(evt.AgeRestriction) ? "Fără restricții" : evt.AgeRestriction)</div>
+                    }
+                </div>
+            </div>
+
+            <!-- Reviews Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Recenzii de la Oaspeți</h3>
+                @{
+                    IEnumerable<ReservationSystemMVC.Core.Domain.ValueObjects.Review> reviews = null;
+                    if(hotel != null) reviews = hotel.Reviews;
+                    else if (apartment != null) reviews = apartment.Reviews;
+                    else if (evt != null) reviews = evt.Reviews;
+                }
+
+                @if(reviews != null && reviews.Any())
+                {
+                    <div class="space-y-4">
+                        @foreach(var rev in reviews)
+                        {
+                            <div class="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="font-semibold text-gray-800">@rev.UserName</div>
+                                    <div class="text-sm font-bold text-yellow-500">⭐ @rev.Rating.ToString("0.0")</div>
+                                </div>
+                                <p class="text-gray-600 text-sm mb-1">@rev.Comment</p>
+                                <p class="text-xs text-gray-400">Postat pe: @rev.Date.ToString("dd MMM yyyy")</p>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-gray-500 italic">Deocamdată nu există nicio recenzie pentru această proprietate.</p>
+                }
+            </div>
+        </div>
+
+        <!-- Right Column: Location Map -->
+        <div class="space-y-8">
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Locație pe hartă</h3>
+                <div class="w-full h-64 bg-gray-200 rounded-lg overflow-hidden border border-gray-300">
+                    <!-- Google Maps Embed: Fallback parameter to City to ensure something always displays -->
+                    @{
+                        string queryLocation = "București";
+                        if(hotel != null && hotel.Location != null) queryLocation = $"{hotel.Location.Address}, {hotel.Location.City}";
+                        if(apartment != null && apartment.Location != null) queryLocation = $"{apartment.Location.Address}, {apartment.Location.City}";
+                        if(evt != null && evt.Location != null) queryLocation = $"{evt.Location.Address}, {evt.Location.City}";
+                    }
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        style="border:0;" 
+                        loading="lazy" 
+                        allowfullscreen 
+                        referrerpolicy="no-referrer-when-downgrade" 
+                        src="https://www.google.com/maps/embed/v1/place?key=@googleMapsKey&q=@Uri.EscapeDataString(queryLocation)">
+                    </iframe>
+                    <!-- Note: Since this requires an API Key, it will show a grey box or an error. In production replace ADD_YOUR_API_KEY_HERE. 
+                         For a completely free static visual fallback without API keys, we can just display the text coordinates or a generic map. -->
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>

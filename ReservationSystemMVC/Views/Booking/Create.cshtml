@@ -1,4 +1,4 @@
-@model ReservationSystemMVC.Models.BookingCreateViewModel
+﻿@model ReservationSystemMVC.Models.BookingCreateViewModel
 
 @{
     ViewData["Title"] = "Crează Rezervare";
@@ -73,10 +73,64 @@
             <small id="availabilityText" class="form-text text-muted"></small>
         </div>
 
-        <button type="submit" class="btn btn-primary">Confirmă Rezervarea</button>
-        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Anulează</a>
-    </form>
+        <div class="mb-4">
+            <h5 class="mb-3">Alegeți metoda de plată:</h5>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" asp-for="PaymentProvider" value="Stripe" id="payStripe" checked>
+                <label class="form-check-label font-bold" for="payStripe">
+                    💳 Card (prin Stripe)
+                </label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" asp-for="PaymentProvider" value="PayPal" id="payPayPal">
+                <label class="form-check-label font-bold text-blue-600" for="payPayPal">
+                    P <span class="text-blue-800">PayPal</span>
+                </label>
+            </div>
+            <span asp-validation-for="PaymentProvider" class="text-danger"></span>
+        </div>
 
+        <button type="submit" class="btn btn-primary">Confirma Rezervarea</button> <button type="button" class="btn btn-warning ml-2" onclick="saveDraft()">Salveaza ca Draft (Memento/Command)</button>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Anulează</a>
+    </form><script>
+function saveDraft() {
+    const form = document.querySelector("form");
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    data.GuestsCount = parseInt(data.GuestsCount) || 1;
+    data.TotalPrice = parseFloat(data.TotalPrice) || 0;
+    // Remove antiforgery token - not needed for this endpoint
+    delete data['__RequestVerificationToken'];
+
+    fetch("/Draft/SaveDraft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("Server error: " + res.status);
+        return res.json();
+    })
+    .then(res => {
+        if (res.success) {
+            const btn = document.querySelector('[onclick="saveDraft()"]');
+            if (btn) {
+                btn.textContent = "✓ Draft Salvat!";
+                btn.classList.replace("btn-warning", "btn-success");
+                setTimeout(() => {
+                    btn.textContent = "Salveaza ca Draft (Memento/Command)";
+                    btn.classList.replace("btn-success", "btn-warning");
+                }, 3000);
+            }
+        }
+    })
+    .catch(err => {
+        alert("Eroare la salvarea draft-ului: " + err.message);
+    });
+}
+</script>
+
+    @*
     <div class="mt-4">
         <h4>Rezervări Rapid</h4>
         @foreach (var item in Model.AvailableResources)
@@ -86,6 +140,7 @@
             </a>
         }
     </div>
+    *@
 </div>
 
 @section Scripts {
@@ -137,3 +192,5 @@
         })();
     </script>
 }
+
+

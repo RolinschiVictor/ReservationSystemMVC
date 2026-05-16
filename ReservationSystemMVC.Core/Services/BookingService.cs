@@ -11,11 +11,13 @@ public class BookingService
 {
     private readonly IBookingRepository _bookingRepository;
     private readonly IResourceRepository _resourceRepository;
+    private readonly ReservationSystemMVC.Core.Patterns.Observer.IObservable _notifier;
 
-    public BookingService(IBookingRepository bookingRepository, IResourceRepository resourceRepository)
+    public BookingService(IBookingRepository bookingRepository, IResourceRepository resourceRepository, ReservationSystemMVC.Core.Patterns.Observer.IObservable notifier)
     {
         _bookingRepository = bookingRepository;
         _resourceRepository = resourceRepository;
+        _notifier = notifier;
     }
 
     private static int GetReservationLimit(BookableResource resource) => resource switch
@@ -100,6 +102,9 @@ public class BookingService
 
         _bookingRepository.AddBooking(booking);
 
+        // Notify observers about the new booking
+        _notifier.Notify($"New booking created: {booking.Id} for resource {booking.ResourceId} by {booking.UserFullName}");
+
         return booking;
     }
 
@@ -107,6 +112,8 @@ public class BookingService
     public void UpdateBookingStatus(Guid bookingId, BookingStatus newStatus)
     {
         _bookingRepository.UpdateBookingStatus(bookingId, newStatus);
+        // Notify observers about status change
+        _notifier.Notify($"Booking {bookingId} status changed to {newStatus}");
     }
 
     public Booking? GetBookingById(Guid bookingId)

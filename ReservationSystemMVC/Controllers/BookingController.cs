@@ -14,6 +14,13 @@ using ReservationSystemMVC.Infrastructure.Data;
 using ReservationSystemMVC.Models;
 using Stripe.Checkout;
 using Stripe;
+using PayPalCheckoutSdk.Core;
+using PayPalCheckoutSdk.Orders;
+using Order = PayPalCheckoutSdk.Orders.Order;
+using System.Collections.Generic;
+using ReservationSystemMVC.Core.Patterns.FactoryMethod;
+using ReservationSystemMVC.Core.Patterns.Decorator;
+using ReservationSystemMVC.Core.Patterns.Bridge;
 
 namespace ReservationSystemMVC.Controllers;
 
@@ -24,19 +31,22 @@ public class BookingController : Controller
     private readonly ReservationPricingService _pricingService;
     private readonly ApplicationDbContext _dbContext;
     private readonly IConfiguration _configuration;
+    private readonly IPaymentFactory _paymentFactory;
 
     public BookingController(
         BookingService bookingService,
         IResourceRepository resourceRepository,
         ReservationPricingService pricingService,
         ApplicationDbContext dbContext,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IPaymentFactory paymentFactory)
     {
         _bookingService = bookingService;
         _resourceRepository = resourceRepository;
         _pricingService = pricingService;
         _dbContext = dbContext;
         _configuration = configuration;
+        _paymentFactory = paymentFactory;
 
         var stripeSecretKey = _configuration["Stripe:SecretKey"];
         if (!string.IsNullOrWhiteSpace(stripeSecretKey))
@@ -47,9 +57,25 @@ public class BookingController : Controller
 
     [Authorize]
     [HttpGet]
-    public IActionResult Create(Guid resourceId, DateTime? startDate = null, DateTime? endDate = null)
+    public IActionResult Create(
+        Guid resourceId, 
+        DateTime? startDate = null, 
+        DateTime? endDate = null,
+        string? fullName = null,
+        string? email = null,
+        string? phoneNumber = null,
+        int guestsCount = 1,
+        string? specialRequests = null)
     {
         var vm = BuildCreateViewModel(resourceId, startDate, endDate);
+
+        // Restore values if coming from Draft Restore
+        if (!string.IsNullOrEmpty(fullName)) vm.FullName = fullName;
+        if (!string.IsNullOrEmpty(email)) vm.Email = email;
+        if (!string.IsNullOrEmpty(phoneNumber)) vm.PhoneNumber = phoneNumber;
+        if (guestsCount > 1) vm.GuestsCount = guestsCount;
+        if (!string.IsNullOrEmpty(specialRequests)) vm.SpecialRequests = specialRequests;
+
         return View(vm);
     }
 
@@ -110,23 +136,37 @@ public class BookingController : Controller
                 vm.SpecialRequests,
                 totalPrice);
 
-            var session = CreateStripeSession(booking, resource!.Name);
+            // FACTORY METHOD (Design Pattern) - Generare dinamica a procesorului de plată (PayPal/Stripe)
+            var paymentProcessor = _paymentFactory.CreateProcessor(vm.PaymentProvider);
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+
+            // ADAPTER (Design Pattern) - Procesare tranzactie prin IPaymentProcessor indiferent de ce s-a ales
+            var sessionResponse = paymentProcessor.CreatePaymentSessionAsync(booking, resource!.Name, totalPrice, baseUrl).GetAwaiter().GetResult();
 
             _dbContext.Payments.Add(new Payment
             {
                 BookingId = booking.Id,
                 AmountInCents = (long)Math.Round(totalPrice * 100m),
-                StripeSessionId = session.Id,
-                Status = "Pending"
+                Currency = "eur",
+                Provider = vm.PaymentProvider,
+                Status = "Pending",
+                StripeSessionId = vm.PaymentProvider == "Stripe" ? sessionResponse.SessionId : Guid.NewGuid().ToString(),
+                PayPalOrderId = vm.PaymentProvider == "PayPal" ? sessionResponse.SessionId : string.Empty
             });
             _dbContext.SaveChanges();
 
-            return Redirect(session.Url!);
+            if (!string.IsNullOrEmpty(sessionResponse.RedirectUrl))
+            {
+                return Redirect(sessionResponse.RedirectUrl);
+            }
+
+            return RedirectToAction("MyBookings");
         }
         catch (Exception ex)
         {
             vm.AvailableResources = _resourceRepository.GetAll();
-            vm.ErrorMessage = ex.Message;
+            var innerMessage = ex.InnerException != null ? ex.InnerException.Message : "";
+            vm.ErrorMessage = $"A apărut o eroare la salvare: {ex.Message}. Detalii: {innerMessage}";
             return View(vm);
         }
     }
@@ -181,9 +221,70 @@ public class BookingController : Controller
     }
 
     [HttpGet]
+    public IActionResult PayPalSuccess(Guid bookingId, string token)
+    {
+        var clientId = _configuration["PayPal:ClientId"] ?? "dummy_client_id";
+        var secret = _configuration["PayPal:Secret"] ?? "dummy_secret";
+        var env = new SandboxEnvironment(clientId, secret);
+        var client = new PayPalHttpClient(env);
+
+        var request = new OrdersCaptureRequest(token);
+        request.RequestBody(new OrderActionRequest());
+
+        try
+        {
+            var response = client.Execute(request).Result;
+            var result = response.Result<Order>();
+
+            if (result.Status == "COMPLETED")
+            {
+                var payment = _dbContext.Payments.FirstOrDefault(p => p.BookingId == bookingId && p.Provider == "PayPal");
+                if (payment != null)
+                {
+                    payment.Status = "Completed";
+                    payment.PaidAtUtc = DateTime.UtcNow;
+                    _dbContext.SaveChanges();
+                }
+
+                _bookingService.UpdateBookingStatus(bookingId, BookingStatus.Confirmed);
+                return RedirectToAction("Success", new { bookingId = bookingId });
+            }
+        }
+        catch (Exception)
+        {
+            // Dacă capture-ul eșuează (fonduri insuficiente sau anulare) 
+        }
+
+        return RedirectToAction("Cancel", new { bookingId = bookingId });
+    }
+
+    [HttpGet]
     public IActionResult Success(Guid bookingId)
     {
         var booking = _bookingService.GetBookingById(bookingId);
+
+        if (booking != null)
+        {
+            // --- BRIDGE PATTERN ---
+            // Decidem CUM se trimite mesajul (la adresa de Email)
+            IMessageSender sender = new EmailSender();
+
+            // Decidem CE se trimite (o confirmare)
+            NotificationAction confirmation = new BookingConfirmationNotification(sender);
+            confirmation.Notify($"Rezervarea dvs. pentru id-ul {booking.ResourceId} a fost plasată cu succes!");
+
+            // --- DECORATOR PATTERN ---
+            // Construim expeditorul de baza pentru sistem
+            INotifier notifier = new BaseNotifier();
+
+            // Adaugam functionalitati dinamice: vrea notificare și pe email, și prin SMS
+            notifier = new EmailNotifier(notifier);
+            notifier = new SmsNotifier(notifier);
+
+            // Trimitem notificarea dubla
+            notifier.Send($"Booking {booking.Id} has been successfully paid!");
+        }
+
         return View(booking);
     }
 
@@ -206,8 +307,11 @@ public class BookingController : Controller
         }
 
         var resources = _resourceRepository.GetAll().ToDictionary(r => r.Id, r => r.Name);
-        var bookings = _bookingService
-            .GetBookingsForUser(userId.Value)
+        var rawBookings = _bookingService.GetBookingsForUser(userId.Value).ToList();
+        var bookingIds = rawBookings.Select(b => b.Id).ToList();
+        var payments = _dbContext.Payments.Where(p => bookingIds.Contains(p.BookingId)).ToDictionary(p => p.BookingId, p => p.Provider);
+
+        var bookings = rawBookings
             .Select(b => new BookingListItemViewModel
             {
                 Id = b.Id,
@@ -219,7 +323,8 @@ public class BookingController : Controller
                 GuestsCount = b.GuestsCount,
                 TotalPrice = b.TotalPrice,
                 Status = b.Status,
-                CreatedAtUtc = b.CreatedAtUtc
+                CreatedAtUtc = b.CreatedAtUtc,
+                PaymentProvider = payments.TryGetValue(b.Id, out var prov) ? prov : "Indisponibil"
             })
             .ToList();
 
@@ -405,3 +510,5 @@ public class BookingController : Controller
         return atIndex > 0 ? email[..atIndex] : email;
     }
 }
+
+
