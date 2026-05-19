@@ -1,7 +1,10 @@
 @model ReservationSystemMVC.Core.Domain.Entities.BookableResource
 @using System.Linq
 @using ReservationSystemMVC.Core.Domain.Entities
+@using ReservationSystemMVC.Core.Domain.Enums
+@using ReservationSystemMVC.Core.Patterns.Flyweight
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@inject AmenityFactory AmenityFactory
 
 @{
     ViewData["Title"] = "Detalii Resursă";
@@ -97,7 +100,30 @@
                         <div class="flex items-center text-gray-700"><span class="mr-2">🛏️</span> @hotel.Beds Paturi</div>
                         <div class="flex items-center text-gray-700"><span class="mr-2">🏨</span> @hotel.Style.ToString()</div>
                         <div class="flex items-center text-gray-700"><span class="mr-2">💎</span> Categorie: Lux</div>
-                        <!-- You can expand HotelAmenity flag enums here in a real scenario -->
+                        var amenities = Enum.GetValues<HotelAmenity>()
+                            .Where(a => a != HotelAmenity.None && hotel.Amenities.HasFlag(a))
+                            .ToList();
+
+                        if (amenities.Count > 0)
+                        {
+                            <div class="col-span-2 md:col-span-3 mt-2">
+                                <p class="text-sm font-semibold text-gray-600 mb-2">Facilități</p>
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach (var a in amenities)
+                                    {
+                                        var key = a.ToString();
+                                        var fly = AmenityFactory.GetAmenity(
+                                            key,
+                                            $"Facilitate: {key}",
+                                            $"/images/amenities/{key.ToLowerInvariant()}.svg");
+
+                                        <span class="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded-full" title="@fly.Description">
+                                            @fly.Name
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
                     }
                     else if (apartment != null)
                     {
@@ -106,6 +132,31 @@
                         <div class="flex items-center text-gray-700"><span class="mr-2">🚿</span> @apartment.Bathrooms Băi</div>
                         <div class="flex items-center text-gray-700"><span class="mr-2">👥</span> Max @apartment.MaxGuests oaspeți</div>
                         <div class="flex items-center text-gray-700"><span class="mr-2">📏</span> Suprafață: @apartment.Area</div>
+
+                        var features = Enum.GetValues<ApartmentFeature>()
+                            .Where(f => f != ApartmentFeature.None && apartment.Features.HasFlag(f))
+                            .ToList();
+
+                        if (features.Count > 0)
+                        {
+                            <div class="col-span-2 md:col-span-3 mt-2">
+                                <p class="text-sm font-semibold text-gray-600 mb-2">Dotări</p>
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach (var f in features)
+                                    {
+                                        var key = f.ToString();
+                                        var fly = AmenityFactory.GetAmenity(
+                                            key,
+                                            $"Dotare: {key}",
+                                            $"/images/features/{key.ToLowerInvariant()}.svg");
+
+                                        <span class="px-2 py-1 text-xs bg-emerald-50 text-emerald-700 rounded-full" title="@fly.Description">
+                                            @fly.Name
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
                     }
                     else if (evt != null)
                     {
@@ -113,6 +164,31 @@
                         <div class="flex items-center text-gray-700"><span class="mr-2">🏢</span> Organizator: @evt.Organizer</div>
                         <div class="flex items-center text-gray-700"><span class="mr-2">⏳</span> Durată: @evt.Duration</div>
                         <div class="flex items-center text-gray-700"><span class="mr-2">🔞</span> Vârstă: @(string.IsNullOrEmpty(evt.AgeRestriction) ? "Fără restricții" : evt.AgeRestriction)</div>
+
+                        var facilities = Enum.GetValues<EventFacility>()
+                            .Where(f => f != EventFacility.None && evt.Facilities.HasFlag(f))
+                            .ToList();
+
+                        if (facilities.Count > 0)
+                        {
+                            <div class="col-span-2 md:col-span-3 mt-2">
+                                <p class="text-sm font-semibold text-gray-600 mb-2">Facilități</p>
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach (var f in facilities)
+                                    {
+                                        var key = f.ToString();
+                                        var fly = AmenityFactory.GetAmenity(
+                                            key,
+                                            $"Facilitate: {key}",
+                                            $"/images/facilities/{key.ToLowerInvariant()}.svg");
+
+                                        <span class="px-2 py-1 text-xs bg-amber-50 text-amber-700 rounded-full" title="@fly.Description">
+                                            @fly.Name
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
                     }
                 </div>
             </div>

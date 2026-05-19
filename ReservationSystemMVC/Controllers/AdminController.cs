@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using ReservationSystemMVC.Core.Abstractions.Repositories;
 using ReservationSystemMVC.Core.Domain.Builders;
 using ReservationSystemMVC.Core.Domain.Entities;
+using ReservationSystemMVC.Core.Domain.Factories.FactoryMethod;
+using ReservationSystemMVC.Core.Patterns.Proxy;
 using ReservationSystemMVC.Models.Admin;
 
 namespace ReservationSystemMVC.Controllers;
@@ -52,6 +54,32 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Dashboard));
     }
 
+    [HttpGet]
+    public IActionResult CreateResource()
+    {
+        return View(new CreateResourceViewModel());
+    }
+
+    [HttpPost]
+    public IActionResult CreateResource(CreateResourceViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        ResourceFactoryMethod factory = model.ResourceType switch
+        {
+            "HotelRoom" => new HotelRoomFactory(),
+            "Apartment" => new ApartmentFactory(),
+            "EventVenue" => new EventVenueFactory(),
+            _ => throw new ArgumentOutOfRangeException(nameof(model.ResourceType), model.ResourceType, "Unknown resource type")
+        };
+
+        var resource = factory.CreateResource(model.Name, model.SizeOrCapacity, model.PricePerDay);
+        _resourceRepository.Add(resource);
+
+        return RedirectToAction(nameof(Dashboard));
+    }
+
     [HttpPost]
     public IActionResult CloneResource(Guid id)
     {
@@ -64,5 +92,22 @@ public class AdminController : Controller
             _resourceRepository.Add(clonedResource);
         }
         return RedirectToAction(nameof(Dashboard));
+    }
+
+    [HttpGet]
+    public IActionResult ResourceDocument(Guid id)
+    {
+        var resource = _resourceRepository.GetById(id);
+        if (resource == null)
+        {
+            return NotFound();
+        }
+
+        var userRole = User.IsInRole("Admin") ? "Admin" : "User";
+        IResourceDocument document = new ProxyResourceDocument($"Resource-{resource.Id}-document.txt", userRole);
+
+        var content = document.GetContent();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(content);
+        return File(bytes, "text/plain; charset=utf-8", $"resource-{resource.Id}-internal.txt");
     }
 }

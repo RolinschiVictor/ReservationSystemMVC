@@ -6,6 +6,8 @@ using ReservationSystemMVC.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
+using ReservationSystemMVC.Core.Patterns.Flyweight;
+using ReservationSystemMVC.Core.Patterns.Facade;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,8 +28,12 @@ builder.Services.AddScoped<BookingService>();
 // OBSERVER PATTERN - register the notifier so it can be injected into BookingService
 builder.Services.AddSingleton<ReservationSystemMVC.Core.Patterns.Observer.IObservable, ReservationSystemMVC.Core.Patterns.Observer.ResourceAvailabilityNotifier>();
 builder.Services.AddScoped<ReservationSystemMVC.Core.Patterns.FactoryMethod.IPaymentFactory, ReservationSystemMVC.Core.Patterns.FactoryMethod.PaymentFactory>();
+// FACADE PATTERN - one entry point for payment flow (hides Factory + Adapter)
+builder.Services.AddScoped<HotelReservationFacade>();
 // SINGLETON PATTERN � register the single instance from the Singleton class itself
 builder.Services.AddSingleton(ReservationPricingService.Instance);
+// FLYWEIGHT PATTERN - shared amenity cache used across requests/pages
+builder.Services.AddSingleton<AmenityFactory>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -46,6 +52,8 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
+
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 

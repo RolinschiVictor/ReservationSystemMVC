@@ -1,0 +1,47 @@
+@model ReservationSystemMVC.Models.Admin.CreateResourceViewModel
+@{
+	ViewData["Title"] = "Create Resource";
+}
+
+<div class="container mt-4">
+	<h2>Create New Resource (Factory Method)</h2>
+	<hr />
+
+	<div class="row">
+		<div class="col-md-6">
+			<form asp-action="CreateResource" method="post">
+				<div class="form-group mb-3">
+					<label asp-for="ResourceType">Resource Type</label>
+					<select asp-for="ResourceType" class="form-select">
+						<option value="HotelRoom">Hotel Room</option>
+						<option value="Apartment">Apartment</option>
+						<option value="EventVenue">Event Venue</option>
+					</select>
+					<span asp-validation-for="ResourceType" class="text-danger"></span>
+				</div>
+
+				<div class="form-group mb-3">
+					<label asp-for="Name">Name</label>
+					<input asp-for="Name" class="form-control" />
+					<span asp-validation-for="Name" class="text-danger"></span>
+				</div>
+
+				<div class="form-group mb-3">
+					<label asp-for="SizeOrCapacity">Beds / Rooms / Capacity</label>
+					<input asp-for="SizeOrCapacity" class="form-control" />
+					<span asp-validation-for="SizeOrCapacity" class="text-danger"></span>
+					<div class="form-text">HotelRoom = beds, Apartment = rooms, EventVenue = capacity.</div>
+				</div>
+
+				<div class="form-group mb-3">
+					<label asp-for="PricePerDay">Price Per Day (€)</label>
+					<input asp-for="PricePerDay" class="form-control" step="0.01" />
+					<span asp-validation-for="PricePerDay" class="text-danger"></span>
+				</div>
+
+				<button type="submit" class="btn btn-success">Create (Factory Method)</button>
+				<a asp-action="Dashboard" class="btn btn-secondary">Cancel</a>
+			</form>
+		</div>
+	</div>
+</div>

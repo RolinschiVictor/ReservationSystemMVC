@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ReservationSystemMVC.Core.Patterns.Command;
 using ReservationSystemMVC.Core.Patterns.Memento;
 using ReservationSystemMVC.Models;
+using ReservationSystemMVC.Services;
 
 namespace ReservationSystemMVC.Controllers;
 
@@ -12,11 +13,13 @@ namespace ReservationSystemMVC.Controllers;
 public class DraftController : Controller
 {
     private const string DRAFT_SESSION_KEY = "BookingDraft";
+    private const string DRAFT_PREVIOUS_SESSION_KEY = "BookingDraft.Previous";
 
     // 1. SAVE DRAFT (Command + Memento Patterns)
     [HttpPost]
     public IActionResult SaveDraft([FromBody] BookingCreateViewModel vm)
     {
+        var store = new SessionDraftStateStore(HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>());
         var originator = new BookingDraftOriginator
         {
             ResourceId = vm.ResourceId,
@@ -29,14 +32,31 @@ public class DraftController : Controller
             SpecialRequests = vm.SpecialRequests
         };
 
-        // Uses Command to orchestrate saving the Memento
-        var saveCommand = new SaveDraftCommand(originator);
+        // Command Pattern: executes the save, and keeps the previous state for Undo
+        var saveCommand = new SaveDraftCommand(originator, store);
         saveCommand.Execute();
 
-        // Persist the Memento's state json to Session
-        HttpContext.Session.SetString(DRAFT_SESSION_KEY, saveCommand.GetStateJson());
-
         return Json(new { success = true, message = "Draft saved successfully!" });
+    }
+
+    // 1b. UNDO last SAVE (Command Pattern)
+    [HttpPost]
+    public IActionResult UndoDraft()
+    {
+        var store = new SessionDraftStateStore(HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>());
+
+        var current = store.GetCurrent();
+        var originator = new BookingDraftOriginator();
+        if (!string.IsNullOrEmpty(current))
+        {
+            originator.RestoreFromMemento(new BookingDraftMemento(current));
+        }
+
+        var undoCommand = new UndoDraftCommand(originator, store);
+        undoCommand.Execute();
+
+        var restored = store.GetCurrent();
+        return Json(new { success = !string.IsNullOrEmpty(restored), hasDraft = !string.IsNullOrEmpty(restored) });
     }
 
     // 2. RESTORE DRAFT (Memento Pattern)
@@ -71,6 +91,7 @@ public class DraftController : Controller
     public IActionResult ClearDraft()
     {
         HttpContext.Session.Remove(DRAFT_SESSION_KEY);
+        HttpContext.Session.Remove(DRAFT_PREVIOUS_SESSION_KEY);
         return Json(new { success = true });
     }
 }

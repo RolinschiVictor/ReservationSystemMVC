@@ -6,18 +6,20 @@ namespace ReservationSystemMVC.Core.Patterns.Proxy;
 // Interfața comună
 public interface IResourceDocument
 {
-    void DisplayDocument();
+    string GetContent();
 }
 
 // Obiectul Real, greu de instanțiat și accesat
 public class RealResourceDocument : IResourceDocument
 {
     private readonly string _documentName;
+    private readonly string _content;
 
     public RealResourceDocument(string documentName)
     {
         _documentName = documentName;
         LoadFromDisk();
+        _content = $"[INTERNAL DOCUMENT]\nName: {_documentName}\nGeneratedAtUtc: {DateTime.UtcNow:O}\n\nThis is an internal document available only to Admin users.";
     }
 
     private void LoadFromDisk()
@@ -26,10 +28,7 @@ public class RealResourceDocument : IResourceDocument
         Thread.Sleep(1000); // Simulăm o resursă "grea"
     }
 
-    public void DisplayDocument()
-    {
-        Console.WriteLine($"[RealResourceDocument] Displaying sensitive document: {_documentName}");
-    }
+    public string GetContent() => _content;
 }
 
 // Proxy-ul care controlează accesul (Încărcare leneșă + Protecție)
@@ -45,13 +44,13 @@ public class ProxyResourceDocument : IResourceDocument
         _userRole = userRole;
     }
 
-    public void DisplayDocument()
+    public string GetContent()
     {
         // 1. Protection Proxy: Controlăm accesul pe baza rolului
         if (_userRole != "Admin")
         {
             Console.WriteLine($"[Proxy] Access Denied: User role '{_userRole}' cannot view document '{_documentName}'.");
-            return;
+            return "Access denied. This document is available only for Admin users.";
         }
 
         // 2. Virtual Proxy: Creăm instanța "grea" doar la prima cerere (Lazy Initialization)
@@ -62,6 +61,6 @@ public class ProxyResourceDocument : IResourceDocument
         }
 
         // Delegăm cererea obiectului real
-        _realDocument.DisplayDocument();
+        return _realDocument.GetContent();
     }
 }
