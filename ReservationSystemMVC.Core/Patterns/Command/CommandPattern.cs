@@ -35,4 +35,5 @@ namespace ReservationSystemMVC.Core.Patterns.Command
 
         public string GetStateJson() => _memento.StateJson;
     }
+    */
 }
